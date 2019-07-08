@@ -27,77 +27,138 @@ class ID(object):
     def getId(self):
         return self.Id
 
+
 class Point(object):
+    """
+    A point represents a location in space
+    """
     def __init__(self, x, y, z=0):
+        """
+        Initializes x, y and z coordinate of the point object.
+        x, y, z: integer or float
+        """
         if not(type(x)==int or type(x)==float):
             raise TypeError ('X coordinate of point has to be an integer or \
                              a floating point number.')
+            
         if not(type(y)==int or type(y)==float):
             raise TypeError ('Y coordinate of point has to be an integer or \
                              a floating point number.')
+            
         if not(type(z)==int or type(z)==float):
             raise TypeError ('Z coordinate of point has to be an integer or \
                              a floating point number.')
+            
         self.point = [x, y, z]
+        
     def getX(self):
         return self.point[0]
+    
     def getY(self):
         return self.point[1]
+    
     def getZ(self):
         return self.point[2]
+    
     def getPoint(self):
         return self.point
+    
     def translatePoint(self, vector):
+        """
+        Translates a point in space using a given vector. 
+        vector: an instance of class Vector.
+        Returns: Point object (an instance of Point class)
+        """
         if not isinstance(vector, Vector):
             raise TypeError ('vector must be an instance of Vector class.')
         return Point(self.getX()+vector.getX(), self.getY()+vector.getY(),\
                      self.getZ()+vector.getZ())
+        
     def distanceFromPoint(self, point):
+        """
+        Calculates the distance between two points, with this object as the 
+        current point and point as the other given point.
+        point: an instance of Point class.
+        Returns: euclidean distance between two points.
+        """
         if not isinstance(point, Point):
             raise TypeError ('point must be an instance of the Point class')
         return ((self.getX()-point.getX())**2+(self.getY()-point.getY())**2+ \
                        (self.getZ()-point.getZ())**2)**0.5
 
+
 class Vector(object):
+    """
+    Represents a vector in the euclidean space.
+    """
     def __init__(self, x, y, z=0):
+        """
+        Initializes x, y and z coordinates of a vector.
+        x, y, z: integer or float
+        """
         if not(type(x)==int or type(x)==float):
             raise TypeError ('X coordinate of vector has to be an integer or \
                              a floating point number.')
+            
         if not(type(y)==int or type(y)==float):
             raise TypeError ('Y coordinate of vector has to be an integer or \
                              a floating point number.')
+            
         if not(type(z)==int or type(z)==float):
             raise TypeError ('Z coordinate of vector has to be an integer or \
                              a floating point number.')
+            
         self.vector = [x, y, z]
+        
     def getX(self):
         return self.vector[0]
+    
     def getY(self):
         return self.vector[1]
+    
     def getZ(self):
         return self.vector[2]
+    
     def getVector(self):
         return self.vector
+    
     def vectorMagnitude(self):
+        """
+        Returns vector's magnitude or length.
+        """
         return np.linalg.norm(self.vector)
+    
     def vectorAddition(self, other):
+        """
+        Adds two vectors coordinate-wise in euclidean space, with this object as
+        the current vector and other as a given vector.
+        other: an instance of Vector class
+        Returns: an instance of Vector class
+        """
         if not isinstance(other, Vector):
             raise TypeError ('other must be an instance of Vector class.')
         return Vector(self.getX()+other.getX(), self.getY()+other.getY(), \
                       self.getZ()+other.getZ())
 
 class PointLoad(object):
+    """
+    Represents a point load in space.
+    """
     def __init__(self, positionPoint, load, angle=90):
         if not isinstance(positionPoint, Point):
             raise TypeError ('positionPoint must be an instance of Point class.')
+            
         if not(type(load)==int or type(load)==float):
             raise TypeError ('Load must be an integer or \
                              a floating point number.')
+            
         if not(type(angle)==int or type(angle)==float):
             raise TypeError ('Angle must be an integer or \
                              a floating point number.')
+            
         if angle<0 or angle>180:
             raise ValueError ('Angle must be less than 180 and greater than zero.')
+            
         self.Id = ID()
         self.positionPoint = positionPoint
         self.load = load
@@ -105,39 +166,54 @@ class PointLoad(object):
         self.loadVectorY = Vector(0, float(self.load*np.sin(np.radians(self.angle))), 0)
         self.loadVectorX = Vector(float(self.load*np.cos(np.radians(self.angle))), 0, 0)
         self.polynomial = np.poly1d([self.loadVectorY.getY()])
+        
     def getId(self):
         return self.Id.getId()
+    
     def getPositionPoint(self):
         return self.positionPoint
+    
     def setPositionPoint(self, point):
         if not isinstance(point, Point):
             raise TypeError ('point must be an instance of Point class.')
         self.positionPoint = point
+        
     def getLoad(self):
         return self.load
+    
     def getLoadVectorY(self):
         return self.loadVectorY
+    
     def getLoadVectorX(self):
         return self.loadVectorX
+    
     def getAngle(self):
         return self.angle
+    
     def getPolynomial(self):
         return self.polynomial
+    
     def isInsideInterval(self, interval):
         return self.getPositionPoint().getX() == interval[0]
+
 
 class DistributedLoad(object):
     def __init__(self, positionPoint1, loadVector1, positionPoint2, loadVector2):
         if not isinstance(positionPoint1, Point):
             raise TypeError ('positionPoint1 must be an instance of Point class.')
+            
         if not isinstance(loadVector1, Vector):
             raise TypeError ('loadVector1 must be an instance of Vector class.')
+            
         if not isinstance(positionPoint2, Point):
             raise TypeError ('positionPoint2 must be an instance of Point class.')
+            
         if not isinstance(loadVector2, Vector):
             raise TypeError ('loadVector2 must be an instance of Vector class.')
+            
         if positionPoint1.getX() == positionPoint2.getX():
             raise TypeError ('Start and end loads cannot have the same position point.')
+            
         self.Id = ID()
         self.positionPoint1 = positionPoint1
         self.loadVector1 = loadVector1
@@ -145,34 +221,48 @@ class DistributedLoad(object):
         self.loadVector2 = loadVector2
         self.coefficients = [(self.loadVector2.getY()-self.loadVector1.getY())/(self.positionPoint2.getX()-self.positionPoint1.getX()),\
                             ((self.loadVector2.getY()-self.loadVector1.getY())/(self.positionPoint2.getX()-self.positionPoint1.getX()))*-self.positionPoint1.getX()+self.loadVector1.getY()]
+        
         self.polynomial = np.poly1d(self.coefficients)
-        self.area = np.polysub(np.polyint(self.polynomial), np.poly1d([np.polyint(self.polynomial)(self.positionPoint1.getX())]))
+#        self.area = np.polysub(np.polyint(self.polynomial), np.poly1d([np.polyint(self.polynomial)(self.positionPoint1.getX())]))
         self.area = scipy.integrate.quad(self.polynomial, self.positionPoint1.getX(), \
                                          self.positionPoint2.getX())[0]
+        
         self.centerOfGravity = Point(scipy.integrate.quad(np.polymul(np.poly1d([1,0]), \
                                     self.polynomial), self.positionPoint1.getX(), \
                                     self.positionPoint2.getX())[0]/self.area,0,0)
+        
         self.resultantLoad = PointLoad(self.centerOfGravity, self.area, 90)
+        
     def getId(self):
         return self.Id.getId()
+    
     def getPositionPoint1(self):
         return self.positionPoint1
+    
     def getLoadVector1(self):
         return self.loadVector1
+    
     def getPositionPoint2(self):
         return self.positionPoint2
+    
     def getLoadVector2(self):
         return self.loadVector2
+    
     def getCoefficients(self):
         return self.coefficients
+    
     def getPolynomial(self):
         return self.polynomial
+    
     def getArea(self):
         return self.area
+    
     def getCenterOfGravity(self):
         return self.centerOfGravity
+    
     def getResultantLoad(self):
         return self.resultantLoad
+    
     def isInsideInterval(self, interval):
         return self.getPositionPoint1().getX() <= interval[0] and self.getPositionPoint2().getX() >= interval[1]
 
@@ -180,17 +270,23 @@ class Moment(object):
     def __init__(self, positionPoint, moment):
         if not isinstance(positionPoint, Point):
             raise TypeError ('positionPoint must be an instance of Point class.')
+            
         if not (type(moment)==int or type(moment)==float):
             raise TypeError ('moment must be of type int or float.')
+            
         self.Id = ID()
         self.positionPoint = positionPoint
         self.moment = moment
+        
     def getId(self):
         return self.Id.getId()
+    
     def getPositionPoint(self):
         return self.positionPoint
+    
     def getMoment(self):
         return self.moment
+    
     def isInsideInterval(self, interval):
         return self.getPositionPoint().getX() == interval[0]
 
@@ -198,26 +294,34 @@ class Support(object):
     def __init__(self, positionPoint, reacType='fixed'):
         if not isinstance(positionPoint, Point):
             raise TypeError ('positionPoint must be an instance of Point class.')
+            
         self.Id = ID()
         self.positionPoint = positionPoint
         self.reactionForce = Vector(0,0,0)
         self.polynomial = np.poly1d([0])
+        
     def getId(self):
         return self.Id.getId()
+    
     def getPositionPoint(self):
         return self.positionPoint
+    
     def getReactionForce(self):
         return self.reactionForce
+    
     def setReactionForce(self, force):
         if not isinstance(force, Vector):
             raise TypeError ("force must be an instance of Vector class.")
         self.reactionForce = force
         yVal = self.reactionForce.getY()
         self.polynomial = np.poly1d([yVal])
+        
     def getPolynomial(self):
         return self.polynomial
+    
     def isToTheRight(self, load):
         return self.getPositionPoint().getX() > load.getPositionPoint().getX()
+    
     def isInsideInterval(self, interval):
         return self.getPositionPoint().getX() == interval[0]
 
@@ -226,15 +330,19 @@ class Beam(object):
         for load in pointLoads:
             if not isinstance(load, PointLoad):
                 raise TypeError ('Load must be an instance PointLoad class.')
+                
         for load in distLoads:
             if not isinstance(load, DistributedLoad):
                 raise TypeError ('Load must be an instance DistributedLoad class.')
+                
         for support in supports:
             if not(isinstance(support, Support)):
                 raise TypeError ('Support of the beam must be an instance of Support class.')
+                
         for moment in moments:
             if not(isinstance(moment, Moment)):
                 raise TypeError ('Moment of the beam must be an instance of Moment class.')
+                
         self.Id = ID()
         self.pointLoads = pointLoads
         self.distLoads = distLoads
@@ -247,18 +355,25 @@ class Beam(object):
         self.loadIntervals = self.makeLoadIntervals(self.intervals)
         self.shearForces, self.rawSh, self.vi = [], [], []
         self.bendingMoments, self.rawBm, self.mi = [], [], []
+        
     def getId(self):
         return self.Id.getId()
+    
     def getLoads(self):
         return [elem for array in [self.pointLoads, self.distLoads] for elem in array]
+    
     def getSupports(self):
         return self.supports
+    
     def getMoments(self):
         return self.moments
+    
     def getLength(self):
         return self.length
+    
     def getBeam(self):
         return self.beam
+    
     def makeXVals(self, beam):
         xVals = []
         xVals.append(0)
@@ -269,16 +384,20 @@ class Beam(object):
                 xVals.append(elem.getPositionPoint2().getX())
             else: xVals.append(elem.getPositionPoint().getX())
         return np.unique(xVals).tolist()
+    
     def getXVals(self):
         return self.xVals
+    
     def makeIntervals(self, xVals):
         intervals = [[xVals[i], xVals[i+1]] for i in range(len(xVals)-1)]
         #Here we have to add another interval with zero length to be able to calculate a force at the end of beam,
         #since isInsideInterval just checks for the force being at the start of interval
         intervals.append([xVals[-1], xVals[-1]])
         return intervals
+    
     def getIntervals(self):
         return self.intervals
+    
     def makeLoadIntervals(self, intervals):
         loadIntervals = []
         for interval in intervals:
@@ -288,8 +407,10 @@ class Beam(object):
                     newInterval.append(elem)
             loadIntervals.append(newInterval)
         return loadIntervals
+    
     def getLoadIntervals(self):
         return self.loadIntervals
+    
     def makeShearForces(self, loadIntervals):
         shearForces = []
         rawSh = []
@@ -325,18 +446,25 @@ class Beam(object):
         self.intervals.pop()
         self.loadIntervals.pop()
         return shearForces[:-1], rawSh[:-1], vi[:-1]
+    
     def getShearForces(self):
         return self.shearForces
+    
     def setShearForces(self, shearForces):
         self.shearForces = shearForces
+        
     def getRawSh(self):
         return self.rawSh
+    
     def setRawSh(self, rawSh):
         self.rawSh = rawSh
+        
     def getVi(self):
         return self.vi
+    
     def setVi(self, vi):
         self.vi = vi
+        
     def makeBendingMoments(self):
         bendingMoments = []
         rawBm = []
@@ -366,20 +494,28 @@ class Beam(object):
                 if isinstance(self.getLoadIntervals()[k][l], Moment):
                     bendingMoments[k] = np.polyadd(bendingMoments[k], np.poly1d([self.getLoadIntervals()[k][l].getMoment()]))
         return bendingMoments, rawBm, mi
+    
     def getBendingMoments(self):
         return self.bendingMoments
+    
     def setBendingMoments(self, bendingMoments):
         self.bendingMoments = bendingMoments
+        
     def getRawBm(self):
         return self.rawBm
+    
     def setRawBm(self, rawBm):
         self.rawBm = rawBm
+        
     def getMi(self):
         return self.mi
+    
     def setMi(self, mi):
         self.mi = mi
+        
     def calculateReactions(self):
         raise NotImplementedError
+        
 
 class SimpleBeam(Beam):
     def calculateReactions(self):
@@ -427,11 +563,13 @@ class SimpleBeam(Beam):
         self.setBendingMoments(bendingMoments)
         self.setRawBm(rawBm)
         self.setMi(mi)
+        
 
 class CantileverBeam(Beam):
     def calculateReactions(self):
         loads = self.getLoads()
         total = 0
+        
         for load in loads:
             if isinstance(load, PointLoad):
                 #Should be reconsidered if it's better to use getY() instead of vectorMagnitude()
@@ -450,6 +588,7 @@ class CantileverBeam(Beam):
         self.setBendingMoments(bendingMoments)
         self.setRawBm(rawBm)
         self.setMi(mi)
+        
 
 def polyString(coeffs):
     equation = ''
@@ -473,6 +612,7 @@ def polyString(coeffs):
                 equation+='x'
     return equation
 
+
 def convertToInt(coeffs):
     decimals = np.modf(coeffs)[0].tolist()
     coeffs = coeffs.tolist()
@@ -480,6 +620,7 @@ def convertToInt(coeffs):
         if decimals[i]==0:
             coeffs[i] = int(coeffs[i])
     return coeffs
+
 
 def rootFinder(shEq, benEq, intervals):
     roots = []
@@ -492,6 +633,7 @@ def rootFinder(shEq, benEq, intervals):
                     roots.append(root)
                     rootVals.append(float(np.round(benEq[i](root),2)))
     return [roots, rootVals]
+
 
 def beamMaker(elemList, beam_type, flPt):
     length, pointLoads, distLoads, supports, moments = 0, [], [], [], []
@@ -522,6 +664,7 @@ def beamMaker(elemList, beam_type, flPt):
     shearXvals, shearYvals, bendingXvals, bendingYvals = [], [], [], []
     shearForces = beam.getShearForces()
     bendingMoments = beam.getBendingMoments()
+    
     for i in range(len(shearForces)):
         if shearForces[i].order>1:
             sxvals = np.round(np.linspace(beam.getIntervals()[i][0], beam.getIntervals()[i][1], 100), flPt).tolist()
