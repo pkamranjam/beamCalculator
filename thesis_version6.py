@@ -12,11 +12,18 @@ class OutOfBeamException(Exception):
     """
 
 class ID(object):
-    """An ID represent a custom id for each element"""
+    """
+    An ID represents a custom id for each element
+    """
     Id = 1
+    """
+    Initializes a new id for an element and increments the class
+    variable Id by one
+    """
     def __init__(self):
         self.Id = ID.Id
         ID.Id += 1
+        
     def getId(self):
         return self.Id
 
