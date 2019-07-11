@@ -145,6 +145,18 @@ class PointLoad(object):
     Represents a point load in space.
     """
     def __init__(self, positionPoint, load, angle=90):
+        """
+        Initializes a point load with a given position point, magnitude and angle.
+        It decomposes load vector into two vertical (loadVectorY) and horizontal
+        (loadVectorX) vectors in order to calculate the sum of forces in x and 
+        y directions. Finally, it evaluates a polynomial (a constant) resulting 
+        from the effect of point load in an inteval of a beam.
+        
+        positionPoint: An instance of Point class.
+        Load: int or fload representing the magnitude of point load
+        angle: int or float representing the angle between point load and beam
+                ranging from 0 to 360.
+        """
         if not isinstance(positionPoint, Point):
             raise TypeError ('positionPoint must be an instance of Point class.')
             
@@ -174,6 +186,10 @@ class PointLoad(object):
         return self.positionPoint
     
     def setPositionPoint(self, point):
+        """
+        Sets a new position point for a point load.
+        point: must be an instance of Point class.
+        """
         if not isinstance(point, Point):
             raise TypeError ('point must be an instance of Point class.')
         self.positionPoint = point
@@ -194,11 +210,28 @@ class PointLoad(object):
         return self.polynomial
     
     def isInsideInterval(self, interval):
+        """
+        Chacks if a point load is inside a given interval excluding the end point.
+        The interval is in the x direction (beam axis).
+        """
         return self.getPositionPoint().getX() == interval[0]
 
 
 class DistributedLoad(object):
+    """
+    Represents a distributed load on a beam.
+    """
     def __init__(self, positionPoint1, loadVector1, positionPoint2, loadVector2):
+        """
+        Initializes a distributed load using two position points representing 
+        the start and end points and two loadVectors representing the start and
+        end load vectors of a disributed load. It creates the coefficient of a 
+        line connecting two loads and polynomial of the line. It calculates the
+        area under the line connecting two loads which corresponds to the magnitude
+        of the resultant force and also finds the center of gravity, the location
+        of the resultant force. Finally, it returns the resultant load as an 
+        instance of PointLoad class.
+        """
         if not isinstance(positionPoint1, Point):
             raise TypeError ('positionPoint1 must be an instance of Point class.')
             
@@ -264,10 +297,22 @@ class DistributedLoad(object):
         return self.resultantLoad
     
     def isInsideInterval(self, interval):
+        """
+        Checks if a distributed load is inside a given interval.
+        """
         return self.getPositionPoint1().getX() <= interval[0] and self.getPositionPoint2().getX() >= interval[1]
+    
 
 class Moment(object):
+    """
+    Represents a moment on a beam.
+    """
     def __init__(self, positionPoint, moment):
+        """
+        Initializes a moment object using position point and magnitude of moment.
+        positionPoint: An instance of Point class.
+        moment: int or float. Magnitude of moment.
+        """
         if not isinstance(positionPoint, Point):
             raise TypeError ('positionPoint must be an instance of Point class.')
             
@@ -289,9 +334,22 @@ class Moment(object):
     
     def isInsideInterval(self, interval):
         return self.getPositionPoint().getX() == interval[0]
+    
 
 class Support(object):
+    """
+    A support represents support of a beam.
+    """
     def __init__(self, positionPoint, reacType='fixed'):
+        """
+        Initializes a support using a given positionPoint and sets the 
+        reactionForce and polynomial of the support initially to zero vector 
+        and constant respectively.
+        
+        positionPoint: An instance of Point class.
+        reactionForce: An instance of Vector class.
+        polynomial: Numpy poly1d polynomial.
+        """
         if not isinstance(positionPoint, Point):
             raise TypeError ('positionPoint must be an instance of Point class.')
             
@@ -310,6 +368,10 @@ class Support(object):
         return self.reactionForce
     
     def setReactionForce(self, force):
+        """
+        Sets the reaction force and polynomial of a support after calculation.
+        "force" must be an instance of Vector class.
+        """
         if not isinstance(force, Vector):
             raise TypeError ("force must be an instance of Vector class.")
         self.reactionForce = force
@@ -320,13 +382,44 @@ class Support(object):
         return self.polynomial
     
     def isToTheRight(self, load):
+        """
+        Checks if support is to the right side of a given load by comparing their
+        x values. 
+        
+        This method is useful when specifying the sign of moment of 
+        load around a given point.
+        """
         return self.getPositionPoint().getX() > load.getPositionPoint().getX()
     
     def isInsideInterval(self, interval):
         return self.getPositionPoint().getX() == interval[0]
+    
 
 class Beam(object):
+    """
+    A beam represents a beam defined with a specified length and the defined
+    loads, moments and supports acting on it. All the elements acting on a beam
+    divide it into different intervals that have specific shear forces and bending
+    moments. 
+    
+    This class calculates these shear forces and bending moments along
+    with their equations.
+    """
     def __init__(self, pointLoads, distLoads, supports, moments, length):
+        """
+        Initializes a beam object with given point Loads, distributed loads, 
+        supports, moments and beam length.
+        
+        pointLoads: A list of point loads. All the point loads in this list must 
+                    be instances of PointLoad class.
+        distLoads: A list of distributed loads. All the distributed loads in 
+                    this list must be instances of DistributedLoad class.
+        supports: A list of supports. All the supports in this list must be 
+                    instances of Support class.
+        moments: A list of moments. All the moments in this list must be instances
+                 of Moment class.
+        length: int or float. Length of beam.
+        """
         for load in pointLoads:
             if not isinstance(load, PointLoad):
                 raise TypeError ('Load must be an instance PointLoad class.')
@@ -342,6 +435,9 @@ class Beam(object):
         for moment in moments:
             if not(isinstance(moment, Moment)):
                 raise TypeError ('Moment of the beam must be an instance of Moment class.')
+        
+        if type(length) != int or type(length) != float:
+            raise TypeError ("Length must be either int or float.")
                 
         self.Id = ID()
         self.pointLoads = pointLoads
@@ -375,6 +471,12 @@ class Beam(object):
         return self.beam
     
     def makeXVals(self, beam):
+        """
+        Creates a list of all x values of elements acting on a beam, including 
+        the start and end point of the beam.
+        
+        Returns: a list of x values.
+        """
         xVals = []
         xVals.append(0)
         xVals.append(self.getLength())
@@ -389,6 +491,13 @@ class Beam(object):
         return self.xVals
     
     def makeIntervals(self, xVals):
+        """
+        Creates a two-dimensional array. The inner arrays represent intervals 
+        of a beam. (Here, xVals is a list returned by makeXVals method)
+        
+        xVals: list of integers.
+        Returns: two-dimensional array of intervals of a beam
+        """
         intervals = [[xVals[i], xVals[i+1]] for i in range(len(xVals)-1)]
         #Here we have to add another interval with zero length to be able to calculate a force at the end of beam,
         #since isInsideInterval just checks for the force being at the start of interval
@@ -399,6 +508,14 @@ class Beam(object):
         return self.intervals
     
     def makeLoadIntervals(self, intervals):
+        """
+        Creates a two-dimensional array. The inner arrays represent elements
+        acting on each interval. A distributed load can act on two or more different 
+        intervals. (Here, intervals is a list returned by makeIntervals method)
+        
+        intervals: two-dimensional list of intervals.
+        Returns: two-dimensional list of elements acting on each interval.
+        """
         loadIntervals = []
         for interval in intervals:
             newInterval = []
@@ -412,10 +529,21 @@ class Beam(object):
         return self.loadIntervals
     
     def makeShearForces(self, loadIntervals):
+        """
+        Calculates shear force equations of all intervals (shearForces) along 
+        with the shear force equations of the intervals before being summed with 
+        shear force values of previous intervals (rawSh) and shear force values 
+        of previous intervals (vi). 
+        
+        loadIntervals: A two-dimensional array of elements acting on each interval
+        of a beam. (Here, loadIntervals is returned by makeLoadIntervals method)
+                        
+        Returns: a tuple of shear force equations list, raw shear force equations
+        list and shear force constants list.
+        """
         shearForces = []
         rawSh = []
         vi = []
-        # We cannot leave any print statement in the script while in child process!!!
         for i in range(len(loadIntervals)):
             poly = np.poly1d([0])
             lowerLimit = self.getIntervals()[i][0]
@@ -442,7 +570,8 @@ class Beam(object):
                 vi.append(0)
             shearForces.append(poly)
         #Here we remove the extra length-zero interval we created for the last load from
-        #self.intervals, self.loadIntervals and do not include the last element of shearForces.
+        #self.intervals, self.loadIntervals and exclude the last element of 
+        #shearForces created by this zero-length interval.
         self.intervals.pop()
         self.loadIntervals.pop()
         return shearForces[:-1], rawSh[:-1], vi[:-1]
@@ -466,6 +595,16 @@ class Beam(object):
         self.vi = vi
         
     def makeBendingMoments(self):
+        """
+        Calculates bending moment equations of all intervals (bendingMoments) by
+        integrating the shear force equation of each interval along with the 
+        bending moment equations of the intervals before being summed with 
+        bending moment values of previous intervals (rawBm) and bending moment 
+        values of previous intervals (mi).
+                        
+        Returns: a tuple of bending moment equations list, raw bending moment equations
+        list and bending moment constants list.
+        """
         bendingMoments = []
         rawBm = []
         mi = [0]
@@ -514,23 +653,36 @@ class Beam(object):
         self.mi = mi
         
     def calculateReactions(self):
+        """
+        Calculates the reaction force of a support element along a beam. 
+        
+        This method is overridden by SimpleBeam and CantileverBeam classes' 
+        calculateReactions methods, since they are calculated differently.
+        """
         raise NotImplementedError
         
 
 class SimpleBeam(Beam):
+    """
+    A SimpleBeam is a beam with two supports one being a pinned support and the 
+    other a simple or roller support.
+    
+    This class is a subclass of Beam class and inherits everything from it
+    except it overrides its calculateReactions method.
+    """
     def calculateReactions(self):
+        """
+        Calculates the reaction forces of a SimpleBeam supports.
+        """
         result = 0
         loads = self.getLoads()
         for load in loads:
             if isinstance(load, PointLoad):
                 distanceFromSupport = load.getPositionPoint().distanceFromPoint(self.supports[0].getPositionPoint())
-                # print('this is distance from support ', distanceFromSupport)
                 if self.supports[0].isToTheRight(load):
                     result += -(load.getLoadVectorY().getY() * distanceFromSupport)
                 else: result += load.getLoadVectorY().getY() * distanceFromSupport
             if isinstance(load, DistributedLoad):
-                print("position", load.getResultantLoad().getPositionPoint().getX())
-                print("Load", load.getResultantLoad().getLoad())
                 distanceFromSupport = load.getResultantLoad().getPositionPoint().\
                 distanceFromPoint(self.supports[0].getPositionPoint())
                 if self.supports[0].isToTheRight(load.getResultantLoad()):
@@ -543,8 +695,7 @@ class SimpleBeam(Beam):
                         distanceFromPoint(self.supports[0].getPositionPoint())),0))
         else: self.supports[1].setReactionForce(Vector(0,float(-result/self.supports[1].getPositionPoint().\
                     distanceFromPoint(self.supports[0].getPositionPoint())),0))
-        print("Support 1 ", self.supports[1].getReactionForce().getY())
-        print("Support 0 ", self.supports[0].getReactionForce().getY())
+        
         total = 0
         for load in loads:
             if isinstance(load, PointLoad):
@@ -552,7 +703,6 @@ class SimpleBeam(Beam):
             if isinstance(load, DistributedLoad):
                 total += load.getResultantLoad().getLoadVectorY().vectorMagnitude()
         self.supports[0].setReactionForce(Vector(0, float(total - self.supports[1].getReactionForce().getY()), 0))
-        print("Support 0 ", self.supports[0].getReactionForce().getY())
         
         shearForces, rawSh, vi = self.makeShearForces(self.getLoadIntervals())
         self.setShearForces(shearForces)
@@ -566,18 +716,26 @@ class SimpleBeam(Beam):
         
 
 class CantileverBeam(Beam):
+    """
+    A CantileverBeam is a beam with one fixed support at one of two ends of a
+    beam.
+    
+    This class is a subclass of Beam class and inherits everything from it
+    except it overrides its calculateReactions method.
+    """
     def calculateReactions(self):
+        """
+        Calculates the reaction force of a CantileverBeam support.
+        """
         loads = self.getLoads()
         total = 0
         
         for load in loads:
             if isinstance(load, PointLoad):
-                #Should be reconsidered if it's better to use getY() instead of vectorMagnitude()
                 total += load.getLoadVectorY().getY()
             if isinstance(load, DistributedLoad):
                 total += load.getResultantLoad().getLoadVectorY().getY()
         self.supports[0].setReactionForce(Vector(0, float(-total), 0))
-        print("Support 0 in canteliver beam ", self.supports[0].getReactionForce().getY())
         
         shearForces, rawSh, vi = self.makeShearForces(self.getLoadIntervals())
         self.setShearForces(shearForces)
@@ -752,5 +910,5 @@ dataFromClient = [{"Length": 4}, {"DistributedLoad": {"locationStart": 0, "locat
 #dataFromClient = [{"Length": 3}, {"DistributedLoad": {"locationStart": 1, "locationEnd": 3, "magnitudeStart": -33, "magnitudeEnd": 0}},{"Support": {"location": 0}}, {"Support": {"location": 3}}]
 
 #beam = beamMaker(dataFromClient, SimpleBeam, 2)
-beam = beamMaker(dataFromClient, CanteliverBeam, 2)
+beam = beamMaker(dataFromClient, CantileverBeam, 2)
 print(beam)
