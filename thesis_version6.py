@@ -436,7 +436,7 @@ class Beam(object):
             if not(isinstance(moment, Moment)):
                 raise TypeError ('Moment of the beam must be an instance of Moment class.')
         
-        if type(length) != int or type(length) != float:
+        if not(type(length) != int or type(length) != float):
             raise TypeError ("Length must be either int or float.")
                 
         self.Id = ID()
